@@ -1,4 +1,3 @@
-import logo from './logo.svg';
 import './index.css';
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -6,6 +5,10 @@ import { run, getquestion, answer } from './axiosConfig';
 import background from './background.jpg';
 
 const App = () => {
+
+	React.useEffect(() => {
+		document.title = "ChatBob";
+	})
 	const [ theme, setTheme ] = React.useState('dark')
 	const themeVars = theme === 'dark' ? {
 		app: {backgroundColor: '#2b8c99'},
