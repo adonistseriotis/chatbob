@@ -30,11 +30,6 @@ from sklearn.metrics import  classification_report
 
 dataset_url = "https://raw.githubusercontent.com/JULIELab/EmoBank/master/corpus/emobank.csv"
 df_data = pd.read_csv(dataset_url,quoting = 0)
-
-print(df_data)
-
-print(df_data.describe())
-
 corpus =  df_data.iloc[:, [5]]
 vad = df_data.iloc[:, [2,3,4]]
 
@@ -73,8 +68,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 vectorizer = TfidfVectorizer()
 tf_id_array = vectorizer.fit_transform(corpus['text'].tolist()).toarray()
-print(tf_id_array.shape)
-print(vectorizer.get_feature_names())
 
 """Θα χρησιμοποιήσουμε stopwords για να μειώσουμε την διάσταση του vector που προκύπτει διατηρώντας όμως το νοηματικό περιεχόμενο των περιγραφών."""
 
@@ -89,8 +82,6 @@ my_stopwords = stopwords.words("english") + names.words()
 my_stopwords += ["''", "'d", "'ll", "'re", "'ve", '--', '...', '1', '10', '2', '20', '3', '4', '``', '–', '—', '’', '“', '”']
 my_stopwords = set(my_stopwords)
 
-print(my_stopwords)
-
 def thorough_filter(words):
     filtered_words = []
     regexp = re.compile('[0-9]+')
@@ -104,8 +95,6 @@ def thorough_filter(words):
     return filtered_words
 
 filtered = thorough_filter(vectorizer.get_feature_names())
-print(filtered)
-print(len(filtered))
 
 """Μετά από δοκιμή και βελτιστοποίηση διαφόρων stemmers και lemmatizers, είδαμε ότι ο SnowballStemmer() δίνει τις καλύτερες προτάσεις."""
 
@@ -124,12 +113,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 vectorizer = TfidfVectorizer(tokenizer=SnowballTokenizer(),  max_df=0.95, min_df=3, sublinear_tf=True)
 tf_id_array = vectorizer.fit_transform(corpus['text'].tolist()).toarray()
-print(tf_id_array.shape)
-print(vectorizer.get_feature_names())
-
-print(tf_id_array.shape)
-
-print(vad.shape)
 
 """## Training and Test Sets"""
 
@@ -142,11 +125,6 @@ dev_set = tf_id_array[splits=='dev']
 dev_labels = vad[splits=='dev'].to_numpy()
 
 sample_length = train_set.shape[1]
-
-print(train_set.shape)
-print(train_labels.shape)
-
-train_labels.shape
 
 """## VAD to Basic Emotion Conversion"""
 
@@ -172,10 +150,6 @@ for k,v in emotion_coeff.items():
   emotion_coeff[k] = 2*v+3
 
 emo_coeff = np.array(list(emotion_coeff.values()))
-
-import pprint 
-pp = pprint.PrettyPrinter(indent=4)
-pp.pprint(emotion_coeff)
 
 neigh = NearestNeighbors(n_neighbors=1)
 neigh.fit(emo_coeff)
@@ -252,25 +226,10 @@ if not load:
   history = train_model(model, train_set, train_labels, dev_set, dev_labels, 300, 30, 5)
   model.save("chatbob-model")
 
-model_report(model, history, test_set, test_labels)
-
 if load:
   reconstructed_model = models.load_model("chatbob-model")
 
-vad_preds = model.predict(train_set)
-emo_preds = neigh.kneighbors(vad_preds)
-report = classification_report(train_labels_emo, emo_preds[1], zero_division=0)
-print(report)
-
-vad_preds = model.predict(test_set)
-emo_preds = neigh.kneighbors(vad_preds)
-report = classification_report(test_labels_emo, emo_preds[1], zero_division=0)
-print(report)
-
 """# Emotion Detection"""
-
-X = [[2.74, 3.25, 3.0], [2.2, 4.25, 3.0], [3, 3.5, 4.0]]
-neigh.kneighbors(X)
 
 def analyseSentence(sentence):
   inp = vectorizer.transform([sentence]).toarray()
@@ -279,39 +238,12 @@ def analyseSentence(sentence):
   emos = [vad2emotion[x] for x in emo_pred.ravel()]
   return 1/emo_dst.ravel(), emos
 
-analyseSentence('! ?')
-
 def analyseQuestionnaire(answers):
   emotions = ['anger', 'joy', 'surprise', 'fear', 'sadness']
-  emo_vals = { x:0 for x in emotions }
+  emo_vals = {x:0 for x in emotions}
   for sen in answers:
     emo_ints, emos = analyseSentence(sen)
     for emo, emo_int in zip(emos, emo_ints):
       emo_vals[emo] += emo_int
   emo_vals = { emo: emo_int/sum(emo_vals.values()) for emo, emo_int in emo_vals.items()}
   return emo_vals
-
-answers_sad = ['i woke up today and ate breakfast', "I told her, whenever I'm sad, my grandmother gives me karate chops.", "I thought it was very sad that some Members walked out of this House when President Klaus was speaking, and that that should happen during the current Czech Presidency.", "Then, God will rule mankind and restore the human race to the life of happiness and peace he originally intended."]
-
-answers_scary = ["Scary thing is, he tracked me down by monitoring my signal strength.", "Before moving from there recently to a safer place outside the city, the headquarters family had some scary experiences.", "I can't do this crazy scary short chick screaming at me on the street.",'i woke up today and ate breakfast' ]
-
-answers_happy = ["When he came back to Rosewood... the things he was saying, I was sure that he was in love with you.", "Isn't the sea lovely, Mummy?", "Did you not think that we would not search the world to get justice for those good people that we loved?", "ella considers Jacob only as a friend, but despite her engagement to Edward, she shares a kiss with him, and realizes that she loves him, too, but loves Edward more."]
-
-emo_ints = analyseQuestionnaire(answers_scary)
-print(emo_ints)
-
-plt.bar(emo_ints.keys(), emo_ints.values())
-plt.title("Emotion Intensities")
-plt.ylabel("Intensity")
-plt.show()
-
-analyseQuestionnaire(questions)
-
-answers = []
-while(1):
-  #index = random.sample(range(20),1)
-  ans = input(questions[random.randrange(20)])
-  if ans == 'exit':
-    break
-  answers.append(ans)
-analyseQuestionnaire(answers)
